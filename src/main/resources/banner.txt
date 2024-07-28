@@ -1,0 +1,11 @@
+${AnsiBackground.BLACK}
+${AnsiColor.BRIGHT_GREEN} _______   _______ .______    __        ______   ____    ____               .______    __       __  .___________.________
+${AnsiColor.BRIGHT_GREEN}|       \ |   ____||   _  \  |  |      /  __  \  \   \  /   /               |   _  \  |  |     |  | |           |       /
+${AnsiColor.BRIGHT_GREEN}|  .--.  ||  |__   |  |_)  | |  |     |  |  |  |  \   \/   /      ______    |  |_)  | |  |     |  | `---|  |----`---/  /
+${AnsiColor.BRIGHT_GREEN}|  |  |  ||   __|  |   ___/  |  |     |  |  |  |   \_    _/      |______|   |   _  <  |  |     |  |     |  |       /  /
+${AnsiColor.BRIGHT_GREEN}|  '--'  ||  |____ |  |      |  `----.|  `--'  |     |  |                   |  |_)  | |  `----.|  |     |  |      /  /----.
+${AnsiColor.BRIGHT_GREEN}|_______/ |_______|| _|      |_______| \______/      |__|                   |______/  |_______||__|     |__|     /________|
+
+Title: ${spring.application.name} ${AnsiColor.BLUE}Version: ${application.version} ${AnsiColor.RED} Port: ${server.port}
+${AnsiColor.DEFAULT}Swagger Url: http://localhost:${server.port}/swagger-ui/index.html
+${AnsiBackground.DEFAULT}
