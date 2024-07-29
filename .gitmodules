@@ -1,3 +1,0 @@
-[submodule "deploy-blitz-api-gateway"]
-	path = deploy-blitz-api-gateway
-	url = https://github.com/Deploy-Blitz/deploy-blitz-api-gateway.git
