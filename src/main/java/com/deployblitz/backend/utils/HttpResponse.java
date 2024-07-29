@@ -22,7 +22,7 @@ public class HttpResponse<T> extends ResponseEntity implements Serializable {
     private static final long serialVersionUID = 7156526077883281625L;
 
     public HttpResponse(HttpStatusCode status) {
-        super(new GenericResponse<T>((HttpStatus) status), status);
+        super(new GenericResponse<>((HttpStatus) status), status);
     }
 
     public HttpResponse(Object body, HttpStatusCode status) {
@@ -30,7 +30,11 @@ public class HttpResponse<T> extends ResponseEntity implements Serializable {
     }
 
     public HttpResponse(HttpStatus status, T data) {
-        super(new GenericResponse<T>(status, data), status);
+        super(new GenericResponse<>(status, data), status);
+    }
+
+    public HttpResponse(HttpStatus status, String message, T data) {
+        super(new GenericResponse<>(status, message, data), status);
     }
 
     public HttpResponse(HttpStatus status, String message){
@@ -50,7 +54,7 @@ public class HttpResponse<T> extends ResponseEntity implements Serializable {
     }
 
     public HttpResponse(T data, MultiValueMap headers, HttpStatus status) {
-        super(new GenericResponse<T>(status, data), headers, status);
+        super(new GenericResponse<>(status, data), headers, status);
     }
 
 }
