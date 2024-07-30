@@ -8,6 +8,7 @@ import com.deployblitz.backend.repository.DeployHistoryRepository;
 import com.deployblitz.backend.repository.DeployRepository;
 import com.deployblitz.backend.services.DeployerManager;
 import com.deployblitz.backend.services.GitService;
+import com.deployblitz.backend.services.RuntimeEngine;
 import com.deployblitz.backend.services.ScriptLocator;
 import com.deployblitz.backend.utils.HttpResponse;
 import jakarta.transaction.Transactional;
@@ -17,6 +18,7 @@ import org.eclipse.jgit.errors.TransportException;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
@@ -31,12 +33,15 @@ public class DeployerManagerImpl implements DeployerManager {
 
     private final GitService gitService;
 
+    private final RuntimeEngine runtimeEngine;
+
     private final ScriptLocator scriptLocator;
 
-    public DeployerManagerImpl(DeployRepository deployRepository, DeployHistoryRepository deployHistoryRepository, GitService gitService, ScriptLocator scriptLocator) {
+    public DeployerManagerImpl(DeployRepository deployRepository, DeployHistoryRepository deployHistoryRepository, GitService gitService, RuntimeEngine runtimeEngine, ScriptLocator scriptLocator) {
         this.deployRepository = deployRepository;
         this.deployHistoryRepository = deployHistoryRepository;
         this.gitService = gitService;
+        this.runtimeEngine = runtimeEngine;
         this.scriptLocator = scriptLocator;
     }
 
@@ -60,6 +65,7 @@ public class DeployerManagerImpl implements DeployerManager {
             result.setGitDirectoryPath(repoPath);
             deployRepository.save(result);
             var scriptAsString = scriptLocator.getScript(result.getGitDirectoryPath());
+            runtimeEngine.initializeDaemon(scriptAsString + UUID.randomUUID().toString(), name);
             deployHistoryRepository.save(new DeployHistoryEntity(result, "first-invoke", scriptAsString));
         }
 
@@ -67,6 +73,7 @@ public class DeployerManagerImpl implements DeployerManager {
             var commitId = gitService.pullGitRepo(result.getGitDirectoryPath(), result.getGitBranch(), result.getGitToken());
             var scriptAsString = scriptLocator.getScript(result.getGitDirectoryPath());
             log.info("Commit ID {} from {} to {}", commitId, result.getGitDirectoryPath(), result.getGitBranch());
+            runtimeEngine.initializeDaemon(scriptAsString + UUID.randomUUID().toString(), name);
             deployHistoryRepository.save(new DeployHistoryEntity(result, commitId, scriptAsString));
         }
 
