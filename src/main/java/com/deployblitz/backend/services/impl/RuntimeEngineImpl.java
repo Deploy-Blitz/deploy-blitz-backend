@@ -50,7 +50,7 @@ public class RuntimeEngineImpl implements RuntimeEngine {
             process = processBuilder.start();
             if (stopScript) {
                 stopProcess(process, tempFileLocation);
-                return;
+                return ;
             }
 
             try (var reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
