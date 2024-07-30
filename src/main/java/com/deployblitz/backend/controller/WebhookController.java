@@ -3,10 +3,12 @@ package com.deployblitz.backend.controller;
 import com.deployblitz.backend.domain.dto.request.WebHookCreateRequestDto;
 import com.deployblitz.backend.domain.dto.response.WebhookCreateResponseDto;
 import com.deployblitz.backend.services.DeployerManager;
+import com.deployblitz.backend.services.RuntimeEngine;
 import com.deployblitz.backend.utils.HttpResponse;
 import jakarta.validation.Valid;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.errors.TransportException;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -16,9 +18,11 @@ import java.io.IOException;
 public class WebhookController {
 
     private final DeployerManager deployerManager;
+    private final RuntimeEngine runtimeEngine;
 
-    public WebhookController(DeployerManager deployerManager) {
+    public WebhookController(DeployerManager deployerManager, RuntimeEngine runtimeEngine) {
         this.deployerManager = deployerManager;
+        this.runtimeEngine = runtimeEngine;
     }
 
     @PostMapping("/create")
@@ -29,6 +33,12 @@ public class WebhookController {
     @PostMapping("/{appName}")
     public HttpResponse<?> invokeWebhook(@PathVariable String appName) throws GitAPIException, IOException {
         return deployerManager.invokeWebhook(appName);
+    }
+
+    @DeleteMapping("/stop/{appName}")
+    public HttpResponse<Void> stopWebhook(@PathVariable String appName) throws GitAPIException, IOException {
+        runtimeEngine.stopDaemon(appName);
+        return new HttpResponse<>(HttpStatus.OK);
     }
 
 }

@@ -11,7 +11,9 @@ public interface RuntimeEngine {
 
     void joinToDaemon(Thread thread);
 
-    void executeScript(String script);
+    void executeScript(String script, Boolean stopScript );
 
     SseEmitter showLogsWebHook(BufferedReader read) throws IOException;
+
+    void stopDaemon(String webHookName);
 }

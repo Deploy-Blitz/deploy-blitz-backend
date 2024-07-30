@@ -60,7 +60,7 @@ public class CustomExceptionHandler {
 
     @ExceptionHandler(NoSuchFileException.class)
     public HttpResponse<?> handleConflict(NoSuchFileException ex) {
-        log.info("No such file: {}", ex.getMessage());
+        log.info("No such file: ", ex);
         return new HttpResponse<>(HttpStatus.NOT_FOUND, "File or Directory Not Found '.deploy-blitz/blitz.sh'");
     }
 }

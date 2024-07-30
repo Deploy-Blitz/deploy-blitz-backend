@@ -26,7 +26,7 @@ public class RuntimeEngineImpl implements RuntimeEngine {
             log.info("Interrupted existing thread: {}", webHookName);
         }
 
-        var newThread = Thread.startVirtualThread(() -> executeScript(script));
+        var newThread = new Thread(() -> executeScript(script, false));
         newThread.setName(webHookName);
         activeThreads.put(webHookName, newThread);
         newThread.start();
@@ -38,15 +38,20 @@ public class RuntimeEngineImpl implements RuntimeEngine {
     }
 
     @Override
-    public void executeScript(String script) {
+    public void executeScript(String script, Boolean stopScript) {
         var tempFileLocation = createTempScriptFile(script);
         log.info("Temporary script file location: {}", tempFileLocation);
 
         var processBuilder = new ProcessBuilder("bash", "-c", tempFileLocation);
         Process process = null;
 
+
         try {
             process = processBuilder.start();
+            if (stopScript) {
+                stopProcess(process, tempFileLocation);
+                return;
+            }
 
             try (var reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                 showLogsWebHook(reader);
@@ -60,14 +65,7 @@ public class RuntimeEngineImpl implements RuntimeEngine {
             log.error("Error executing script: {}", script, e);
             throw new ScriptExtension("Error executing script", e);
         } finally {
-            if (process != null && process.isAlive()) {
-                process.destroy();
-            }
-            try {
-                Files.deleteIfExists(new File(tempFileLocation).toPath());
-            } catch (IOException e) {
-                log.warn("Failed to delete temporary script file: {}", tempFileLocation, e);
-            }
+            stopProcess(process, tempFileLocation);
         }
     }
 
@@ -78,6 +76,30 @@ public class RuntimeEngineImpl implements RuntimeEngine {
             log.info(line);
         }
         return null;
+    }
+
+    @Override
+    public void stopDaemon(String webHookName) {
+        var existingThread = activeThreads.get(webHookName);
+        if (existingThread != null && existingThread.isAlive()) {
+            existingThread.interrupt();
+            log.info("Interrupted existing thread: {}", webHookName);
+        }
+        var newThread = new Thread(() -> executeScript("pwd", true));
+        newThread.setName(webHookName);
+        activeThreads.put(webHookName, newThread);
+        newThread.start();
+    }
+
+    private static void stopProcess(Process process, String tempFileLocation) {
+        if (process != null && process.isAlive()) {
+            process.destroyForcibly();
+        }
+        try {
+            Files.deleteIfExists(new File(tempFileLocation).toPath());
+        } catch (IOException e) {
+            log.warn("Failed to delete temporary script file: {}", tempFileLocation, e);
+        }
     }
 
     private static String createTempScriptFile(String script) {
@@ -98,4 +120,6 @@ public class RuntimeEngineImpl implements RuntimeEngine {
         }
 
     }
+
+
 }
