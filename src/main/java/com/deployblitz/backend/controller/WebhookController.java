@@ -10,6 +10,7 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.errors.TransportException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 
@@ -36,9 +37,14 @@ public class WebhookController {
     }
 
     @DeleteMapping("/stop/{appName}")
-    public HttpResponse<Void> stopWebhook(@PathVariable String appName) throws GitAPIException, IOException {
+    public HttpResponse<Void> stopWebhook(@PathVariable String appName) {
         runtimeEngine.stopDaemon(appName);
         return new HttpResponse<>(HttpStatus.OK);
+    }
+
+    @GetMapping("/{webHookName}")
+    public SseEmitter streamLogs(@PathVariable String webHookName) {
+        return runtimeEngine.getEmitter(webHookName);
     }
 
 }

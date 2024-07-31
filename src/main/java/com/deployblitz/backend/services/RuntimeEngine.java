@@ -9,11 +9,11 @@ public interface RuntimeEngine {
 
     void initializeDaemon(String script, String webHookName);
 
-    void joinToDaemon(Thread thread);
+    void executeScript(String script, String webHookName);
 
-    void executeScript(String script, Boolean stopScript );
-
-    SseEmitter showLogsWebHook(BufferedReader read) throws IOException;
+    SseEmitter showLogsWebHook(BufferedReader read, String webHookName) throws IOException;
 
     void stopDaemon(String webHookName);
+
+    SseEmitter getEmitter(String webHookName);
 }
