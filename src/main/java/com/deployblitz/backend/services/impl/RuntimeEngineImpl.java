@@ -7,9 +7,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.*;
+import java.lang.management.ManagementFactory;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 @Service
@@ -61,29 +63,101 @@ public class RuntimeEngineImpl implements RuntimeEngine {
         }
     }
 
+    private SseEmitter handleProcessOutput(BufferedReader reader, String webHookName) {
+        var emitter = new SseEmitter(0L);
+        emitters.put(webHookName, emitter);
+        var emitterMap = emitters.get(webHookName);
+
+        try {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                log.info(line);
+                if (emitterMap != null) {
+                    try {
+                        emitter.send(SseEmitter.event().data(line));
+                    } catch (IOException e) {
+                        log.error("Error sending log lines to SseEmitter", e);
+                        emitter.completeWithError(e);
+                        emitters.remove(webHookName);
+                        break;
+                    }
+                }
+            }
+        } catch (IOException e) {
+            log.error("Error reading script output", e);
+        } finally {
+            if (emitterMap != null) {
+                emitter.complete();
+                emitters.remove(webHookName);
+            }
+        }
+
+        return emitter;
+    }
+
     @Override
     public SseEmitter showLogsWebHook(BufferedReader reader, String webHookName) throws IOException {
-        var emitter = new SseEmitter();
+        var emitter = new SseEmitter(0L);
+        var flagStop = new AtomicBoolean(false);
         emitters.put(webHookName, emitter);
-        new Thread(() -> {
+        var thread = new Thread(() -> {
             try {
                 var line = "";
                 while ((line = reader.readLine()) != null) {
                     log.info(line);
-                    emitter.send(SseEmitter.event().data(line));
+                    try {
+                        emitter.send(SseEmitter.event().data(line));
+                    } catch (IOException e) {
+                        log.warn("SseEmitter connection closed for {}", webHookName);
+                        break;
+                    }
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
+                log.error("Error sending log lines to SseEmitter", e);
+            } finally {
+                flagStop.set(true);
+                //emitters.remove(webHookName);
+            }
+        });
+        thread.start();
+        if (flagStop.get()) {
+            thread.interrupt();
+        }
+
+        return emitter;
+    }
+
+    @Override
+    public SseEmitter getEmitter(String webHookName) {
+        //getSystemInfo(webHookName);
+        return emitters.get(webHookName);
+    }
+
+    @Override
+    public SseEmitter getSystemInfo(String webHookName) {
+        var emitter = new SseEmitter(0L);
+        emitters.put(webHookName, emitter);
+        new Thread(() -> {
+            try {
+                var threadMap = activeThreads.get(webHookName);
+                var threadMXBean = ManagementFactory.getThreadMXBean();
+
+                for (var threadId : threadMXBean.getAllThreadIds()) {
+                    var threadName = threadMXBean.getThreadInfo(threadId).getThreadName();
+                    if (threadName.equals(webHookName)) {
+                        var cpuTime = threadMXBean.getThreadCpuTime(threadId);
+                        var cpuUsage = threadMXBean.getThreadInfo(threadId);
+                        emitter.send(SseEmitter.event().data("Thread: " + threadName + ", CPU Time: " + cpuTime + " ns Info: " + cpuUsage));
+                    }
+
+                }
+            } catch (Exception e) {
                 log.error("Error sending log lines to SseEmitter", e);
             } finally {
                 emitter.complete();
             }
         }).start();
         return emitter;
-    }
-
-    @Override
-    public SseEmitter getEmitter(String webHookName) {
-        return emitters.get(webHookName);
     }
 
     @Override

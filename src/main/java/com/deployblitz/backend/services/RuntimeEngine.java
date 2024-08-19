@@ -16,4 +16,6 @@ public interface RuntimeEngine {
     void stopDaemon(String webHookName);
 
     SseEmitter getEmitter(String webHookName);
+
+    SseEmitter getSystemInfo(String webHookName);
 }
